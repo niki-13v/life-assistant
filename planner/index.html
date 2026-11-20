@@ -1,0 +1,214 @@
+<title>Daybook</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: one phone-first column; sticky day header, then Today → Due soon → Goals → To-dos → Shifts */
+:root{
+  --bg:#f3f4f7; --surface:#ffffff; --ink:#151a24; --muted:#5d6577; --line:#dfe2ea;
+  --gold:#c98a00; --gold-soft:#fdf1d3; --ok:#1f7a4d; --warn:#b4560a; --crit:#b42318;
+  --display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --body:"Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f131b; --surface:#171c27; --ink:#e8ebf2; --muted:#9aa3b5; --line:#2a3142;
+  --gold:#f5b72a; --gold-soft:#2e2611; --ok:#4cc38a; --warn:#f0a050; --crit:#f2766b; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f131b; --surface:#171c27; --ink:#e8ebf2; --muted:#9aa3b5; --line:#2a3142;
+  --gold:#f5b72a; --gold-soft:#2e2611; --ok:#4cc38a; --warn:#f0a050; --crit:#f2766b; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--body)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:760px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 48px;display:flex;flex-direction:column;gap:28px}
+header.day{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:16px 12px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:end;gap:12px;flex-wrap:wrap}
+h1{font:800 clamp(28px,7vw,40px)/1 var(--display);margin:0;letter-spacing:-.01em}
+.date{font:500 12px var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.status{font-size:12px;color:var(--muted)}
+h2{font:600 20px/1.2 var(--display);margin:0;text-wrap:balance}
+section{display:flex;flex-direction:column;gap:12px}
+.sec-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.hint{font-size:12px;color:var(--muted)}
+.brief{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:flex;flex-direction:column;gap:14px}
+.headline{font-size:16px;font-weight:500;max-width:62ch}
+.label{font:500 11px var(--mono);text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:6px}
+.sched{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:0}
+.sched dt{font:500 13px var(--mono);color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.sched dd{margin:0;min-width:0}
+.kind{display:inline-block;font:500 10px var(--mono);text-transform:uppercase;letter-spacing:.06em;padding:1px 6px;border-radius:4px;margin-left:6px;background:var(--gold-soft);color:var(--ink);vertical-align:2px}
+ul.plain{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+ul.plain li{padding-left:16px;position:relative;max-width:65ch}
+ul.plain li::before{content:"";position:absolute;left:2px;top:.62em;width:6px;height:6px;border-radius:50%;background:var(--gold)}
+.list{display:flex;flex-direction:column;border-top:1px solid var(--line)}
+.row{display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:start;padding:10px 0;border-bottom:1px solid var(--line)}
+.row .main{min-width:0}
+.row .t{font-weight:500;overflow-wrap:anywhere}
+.row .sub{font-size:12.5px;color:var(--muted);overflow-wrap:anywhere}
+.row.done .t{text-decoration:line-through;color:var(--muted)}
+.due{font:500 12px var(--mono);white-space:nowrap;font-variant-numeric:tabular-nums;padding:2px 7px;border-radius:5px;border:1px solid var(--line)}
+.due.crit{color:var(--crit);border-color:currentColor}
+.due.warn{color:var(--warn);border-color:currentColor}
+input[type=checkbox]{width:20px;height:20px;margin:2px 0 0;accent-color:var(--gold);cursor:pointer}
+.goals{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:12px}
+.goal{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.goal .track{font:500 11px var(--mono);text-transform:uppercase;letter-spacing:.1em;color:var(--gold)}
+.goal .gt{font-weight:600}
+.goal .gd{font-size:13px;color:var(--muted)}
+.bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden}
+.bar>i{display:block;height:100%;background:var(--gold)}
+.gfoot{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+.step{display:flex;gap:4px}
+button{font:inherit;cursor:pointer;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:4px 10px}
+button:hover{border-color:var(--gold)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+button.x{border:none;background:none;color:var(--muted);padding:2px 6px;font-size:16px;line-height:1}
+button.primary{background:var(--gold);border-color:var(--gold);color:#151a24;font-weight:600}
+form.add{display:flex;gap:8px;flex-wrap:wrap}
+form.add input[type=text]{flex:1 1 200px;min-width:0}
+input[type=text],input[type=date],select,textarea{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:7px 10px}
+textarea{width:100%;min-height:84px;resize:vertical}
+.empty{color:var(--muted);font-size:14px;padding:10px 0}
+.filters{display:flex;gap:6px;flex-wrap:wrap}
+.filters button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:13px}
+@media (prefers-reduced-motion:no-preference){.bar>i{transition:width .3s}}
+</style>
+
+<div class="wrap">
+  <header class="day">
+    <div>
+      <div class="date" id="today-date"></div>
+      <h1>Daybook</h1>
+    </div>
+    <div class="status" id="status">Connecting…</div>
+  </header>
+
+  <section aria-labelledby="h-today">
+    <div class="sec-head"><h2 id="h-today">Today</h2><span class="hint" id="brief-updated"></span></div>
+    <div class="brief" id="brief">
+      <div class="headline">Your 7:30am brief shows up here each morning: classes, shifts, what's due and the next moves on your long-term goals.</div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-due">
+    <div class="sec-head"><h2 id="h-due">Due soon</h2><span class="hint">From Canvas · tick when submitted</span></div>
+    <div class="filters" id="due-filter">
+      <button type="button" data-f="14" aria-pressed="true">Next 2 weeks</button>
+      <button type="button" data-f="all" aria-pressed="false">All open</button>
+      <button type="button" data-f="done" aria-pressed="false">Done</button>
+    </div>
+    <div class="list" id="due-list"><div class="empty">Canvas assignments appear here once synced.</div></div>
+  </section>
+
+  <section aria-labelledby="h-goals">
+    <div class="sec-head"><h2 id="h-goals">Long-term goals</h2><span class="hint">T10 law · jobs · side income</span></div>
+    <div class="goals" id="goals"><div class="empty">Your goal tracks appear here once set up.</div></div>
+  </section>
+
+  <section aria-labelledby="h-todo">
+    <div class="sec-head"><h2 id="h-todo">To-dos</h2><span class="hint">Personal tasks, plus action items from Gmail</span></div>
+    <form class="add" id="todo-form">
+      <input type="text" id="todo-text" placeholder="Add a to-do…" aria-label="New to-do" maxlength="200">
+      <select id="todo-track" aria-label="Track">
+        <option>Personal</option><option>School</option><option>Law school</option><option>Jobs</option><option>YouTube</option>
+      </select>
+      <input type="date" id="todo-due" aria-label="Due date">
+      <button class="primary" type="submit">Add</button>
+    </form>
+    <div class="list" id="todo-list"><div class="empty">Nothing yet. Add your first to-do above.</div></div>
+  </section>
+
+  <section aria-labelledby="h-shifts">
+    <div class="sec-head"><h2 id="h-shifts">This week's shifts</h2><span class="hint">Claude plans study time around these</span></div>
+    <textarea id="shifts" placeholder="e.g. Mon 4–9pm, Wed 12–6pm, Sat 9–3"></textarea>
+    <div><button type="button" id="save-shifts">Save shifts</button></div>
+  </section>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const now=()=>new Date();
+$("#today-date").textContent=now().toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric"});
+function toast(m){const t=$("#toast");t.textContent=m;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,2200)}
+function dueLabel(iso){
+  if(!iso) return {txt:"",cls:""};
+  const d=new Date(iso), n=now();
+  const days=Math.floor((new Date(d.getFullYear(),d.getMonth(),d.getDate())-new Date(n.getFullYear(),n.getMonth(),n.getDate()))/864e5);
+  const time=d.getHours()||d.getMinutes()? d.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"}):"";
+  let txt= days<0?`${-days}d late`: days===0?`Today ${time}`: days===1?`Tomorrow ${time}`: days<7? d.toLocaleDateString(undefined,{weekday:"short"})+" "+time : d.toLocaleDateString(undefined,{month:"short",day:"numeric"});
+  return {txt:txt.trim(),cls: days<=1?"crit": days<=3?"warn":"" ,days};
+}
+
+let db=null, dueRows=[], dueFilter="14";
+function renderDue(){
+  const el=$("#due-list");
+  let rows=dueRows.slice();
+  if(dueFilter==="done") rows=rows.filter(r=>r.done);
+  else{ rows=rows.filter(r=>!r.done); if(dueFilter==="14") rows=rows.filter(r=>{const l=dueLabel(r.due);return l.days<=14}); }
+  if(!rows.length){el.innerHTML=`<div class="empty">${dueFilter==="done"?"Nothing ticked off yet.":"Nothing due in this window."}</div>`;return}
+  el.innerHTML=rows.map(r=>{const l=dueLabel(r.due);return `<div class="row ${r.done?"done":""}">
+    <input type="checkbox" id="d-${esc(r.id)}" data-id="${esc(r.id)}" ${r.done?"checked":""} aria-label="Mark ${esc(r.title)} done">
+    <label class="main" for="d-${esc(r.id)}"><div class="t">${esc(r.title)}</div><div class="sub">${esc(r.course||"")}${r.url?` · <a href="${esc(r.url)}" target="_blank" rel="noopener">Open in Canvas</a>`:""}</div></label>
+    <span class="due ${l.cls}">${esc(l.txt)}</span></div>`}).join("");
+}
+$("#due-list").addEventListener("change",e=>{const id=e.target.dataset.id;if(id&&db) db.doc("deadlines/"+id).update({done:e.target.checked}).catch(()=>toast("Couldn't save. Check your connection."))});
+$("#due-filter").addEventListener("click",e=>{const f=e.target.dataset.f;if(!f)return;dueFilter=f;document.querySelectorAll("#due-filter button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.f===f));renderDue()});
+
+function renderBrief(b){
+  if(!b) return;
+  const sched=(b.schedule||[]).map(s=>`<dt>${esc(s.time)}</dt><dd>${esc(s.title)}${s.kind?`<span class="kind">${esc(s.kind)}</span>`:""}</dd>`).join("");
+  const list=(a)=>`<ul class="plain">${a.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`;
+  $("#brief").innerHTML=`<div class="headline">${esc(b.headline||"")}</div>
+    ${sched?`<div><div class="label">Schedule</div><dl class="sched">${sched}</dl></div>`:""}
+    ${(b.focus||[]).length?`<div><div class="label">Top 3 today</div>${list(b.focus)}</div>`:""}
+    ${(b.coach||[]).length?`<div><div class="label">Coach's note</div>${list(b.coach)}</div>`:""}`;
+  if(b.updatedAt) $("#brief-updated").textContent="Updated "+new Date(b.updatedAt).toLocaleString(undefined,{weekday:"short",hour:"numeric",minute:"2-digit"});
+}
+
+let goalRows=[];
+function renderGoals(){
+  const el=$("#goals");
+  if(!goalRows.length){el.innerHTML=`<div class="empty">Your goal tracks appear here once set up.</div>`;return}
+  el.innerHTML=goalRows.map(g=>{const p=Math.max(0,Math.min(100,+g.progress||0));return `<article class="goal">
+    <div class="track">${esc(g.track)}</div><div class="gt">${esc(g.title)}</div>
+    ${g.detail?`<div class="gd">${esc(g.detail)}</div>`:""}
+    ${g.next?`<div class="gd"><strong>Next:</strong> ${esc(g.next)}</div>`:""}
+    <div class="bar" role="progressbar" aria-valuenow="${p}" aria-valuemin="0" aria-valuemax="100" aria-label="${esc(g.title)} progress"><i style="width:${p}%"></i></div>
+    <div class="gfoot"><span>${p}%${g.due?` · by ${esc(new Date(g.due+"T12:00").toLocaleDateString(undefined,{month:"short",year:"numeric"}))}`:""}</span>
+    <span class="step"><button type="button" data-g="${esc(g.id)}" data-d="-10" aria-label="Decrease progress">−</button><button type="button" data-g="${esc(g.id)}" data-d="10" aria-label="Increase progress">+</button></span></div></article>`}).join("");
+}
+$("#goals").addEventListener("click",e=>{const id=e.target.dataset.g;if(!id||!db)return;const g=goalRows.find(x=>x.id===id);const p=Math.max(0,Math.min(100,(+g.progress||0)+(+e.target.dataset.d)));db.doc("goals/"+id).update({progress:p}).catch(()=>toast("Couldn't save. Check your connection."))});
+
+let todoRows=[];
+function renderTodos(){
+  const el=$("#todo-list");
+  const rows=todoRows.slice().sort((a,b)=>(a.done-b.done)||((a.due||"9")>(b.due||"9")?1:-1));
+  if(!rows.length){el.innerHTML=`<div class="empty">Nothing yet. Add your first to-do above.</div>`;return}
+  el.innerHTML=rows.map(r=>{const l=dueLabel(r.due?r.due+"T00:00":null);return `<div class="row ${r.done?"done":""}">
+    <input type="checkbox" id="t-${esc(r.id)}" data-id="${esc(r.id)}" ${r.done?"checked":""} aria-label="Mark ${esc(r.text)} done">
+    <label class="main" for="t-${esc(r.id)}"><div class="t">${esc(r.text)}</div><div class="sub">${esc(r.track||"")}${r.source?` · ${esc(r.source)}`:""}</div></label>
+    <span style="display:flex;gap:4px;align-items:center">${l.txt?`<span class="due ${r.done?"":l.cls}">${esc(l.txt)}</span>`:""}<button class="x" type="button" data-del="${esc(r.id)}" aria-label="Delete ${esc(r.text)}">×</button></span></div>`}).join("");
+}
+$("#todo-list").addEventListener("change",e=>{const id=e.target.dataset.id;if(id&&db) db.doc("todos/"+id).update({done:e.target.checked}).catch(()=>toast("Couldn't save."))});
+$("#todo-list").addEventListener("click",e=>{const id=e.target.dataset.del;if(id&&db) db.doc("todos/"+id).delete().then(()=>toast("Deleted")).catch(()=>toast("Couldn't delete."))});
+$("#todo-form").addEventListener("submit",e=>{e.preventDefault();const text=$("#todo-text").value.trim();if(!text||!db)return;
+  db.collection("todos").add({text,track:$("#todo-track").value,due:$("#todo-due").value||null,done:false,createdAt:new Date().toISOString()})
+    .then(()=>{$("#todo-text").value="";$("#todo-due").value="";toast("Added")}).catch(()=>toast("Couldn't add. Check your connection."))});
+
+$("#save-shifts").addEventListener("click",()=>{if(!db)return;db.doc("week/shifts").set({text:$("#shifts").value,updatedAt:new Date().toISOString()}).then(()=>toast("Shifts saved")).catch(()=>toast("Couldn't save shifts."))});
+
+(async()=>{
+  const timer=setTimeout(()=>{$("#status").textContent="Still loading. Pull to refresh if this stays."},10000);
+  db=await (window.claude?.use?.("db")??null);
+  if(!db){clearTimeout(timer);$("#status").textContent="Sign in to claude.ai to see your data.";return}
+  const ok=()=>{clearTimeout(timer);$("#status").textContent="Synced"};
+  const err=()=>{clearTimeout(timer);$("#status").textContent="Couldn't load. Check your connection."};
+  db.doc("brief/today").onSnapshot(s=>{ok();if(s.exists)renderBrief(s.data())},err);
+  db.collection("deadlines").orderBy("due").onSnapshot(s=>{ok();dueRows=s.docs.map(d=>({id:d.id,...d.data()}));renderDue()},err);
+  db.collection("goals").orderBy("order").onSnapshot(s=>{ok();goalRows=s.docs.map(d=>({id:d.id,...d.data()}));renderGoals()},err);
+  db.collection("todos").onSnapshot(s=>{ok();todoRows=s.docs.map(d=>({id:d.id,...d.data()}));renderTodos()},err);
+  db.doc("week/shifts").onSnapshot(s=>{ok();const el=$("#shifts");if(s.exists&&document.activeElement!==el) el.value=s.data().text||""},err);
+})();
+</script>
