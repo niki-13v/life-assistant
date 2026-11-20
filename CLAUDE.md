@@ -20,6 +20,14 @@ Act as my daily planner AND law school application coach.
 4. **Internships / softs** – pre-law relevant experience, leadership, resume building.
 5. **Side income** – automated kids' YouTube videos made with AI (just starting up). Other side hustles welcome.
 
+## Fall 2026 courses (from interview)
+- Marketing Principles, Intro Bio I + Bio lab, General Chemistry II, HONR 240 (Research Writing), Flourish: Science of Well-Being.
+- Ignore Honors Engagement Program items entirely.
+- Highest GPA risk: General Chemistry II. Give it priority study time.
+- Bio lab is not showing in the Canvas feed. Get its dates from the syllabus.
+- Best focus time: late night (10pm+). Schedule deep work and study blocks then.
+- Spring 2027 schedule and degree progress: coming as screenshots in `inbox/`.
+
 ## Sources
 - Canvas: courses, assignments, due dates (VCU blocks tokens; use the calendar feed).
 - Google Calendar: events + study blocks I'm allowed to add.
